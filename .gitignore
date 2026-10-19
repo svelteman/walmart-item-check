@@ -1,0 +1,5 @@
+.server.pid
+.server.log
+/dist/
+/node_modules/
+/data/

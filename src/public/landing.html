@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Walmart Checker">
+    <meta name="theme-color" content="#0071ce">
+    <title>Walmart Order Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0071ce 0%, #00a8e8 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px 24px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0071ce;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .section {
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .link-button {
+            display: block;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #0071ce;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .link-button:active {
+            background: #0071ce;
+            color: white;
+            transform: scale(0.98);
+        }
+
+        .link-button:hover {
+            border-color: #0071ce;
+        }
+
+        .link-button.primary {
+            background: #0071ce;
+            color: white;
+            border-color: #0071ce;
+        }
+
+        .link-button.primary:active {
+            background: #005fa3;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        button {
+            padding: 12px 16px;
+            background: #0071ce;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:active {
+            background: #005fa3;
+            transform: scale(0.98);
+        }
+
+        .info-box {
+            background: #f9f9f9;
+            border-left: 4px solid #0071ce;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .steps {
+            background: #f9f9f9;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .steps ol {
+            margin-left: 20px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .steps li {
+            margin-bottom: 8px;
+        }
+
+        .server-info {
+            background: #e8f4f8;
+            border: 2px solid #0071ce;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .server-info p {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .server-status {
+            font-weight: 600;
+            color: #0071ce;
+            font-size: 14px;
+        }
+
+        .checklist-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .checklist-item {
+            background: #f5f9ff;
+            border: 1px solid #d8ebff;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .checklist-item a {
+            color: #0071ce;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .checklist-meta {
+            display: block;
+            margin-top: 6px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .checklist-empty {
+            color: #666;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px 16px;
+                border-radius: 12px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .section-title {
+                font-size: 12px;
+            }
+
+            .link-button {
+                font-size: 14px;
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">📦</div>
+            <div class="title">Walmart Order Checker</div>
+            <div class="subtitle">Verify you received all your items</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📱 View Checklist</div>
+            <div class="input-section">
+                <input type="text" id="checklistInput" placeholder="Paste checklist ID or URL" />
+                <button onclick="openChecklist()">Open</button>
+            </div>
+            <div class="info-box">
+                You'll get a checklist link when you use the userscript on a Walmart order page.
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">🧾 Recent Checklists</div>
+            <ul id="checklistList" class="checklist-list"></ul>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📝 Install Userscript</div>
+            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                First, make sure you have <strong>Tampermonkey</strong> installed in your browser.
+            </p>
+            <a href="/api/userscripts/walmart-checker.user.js" class="link-button primary">
+                ✓ Install Userscript
+            </a>
+            <p style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
+                Tampermonkey will open an installation dialog
+            </p>
+            <div class="steps">
+                <ol>
+                    <li>Click "Install Userscript" above</li>
+                    <li>Review the script in the new tab</li>
+                    <li>Click "Install" in Tampermonkey</li>
+                    <li>Go to a Walmart order page</li>
+                    <li>Look for the blue "📱 Send to Checker" button</li>
+                    <li>Click it and share the link with your phone/tablet</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">ℹ️ Server Info</div>
+            <a href="/info" class="link-button">
+                View Server Details
+            </a>
+            <div class="server-info">
+                <p>Server is <span class="server-status">✓ Running</span></p>
+                <p style="font-size: 11px; margin-top: 8px;">Open this IP address on your phone/tablet to get here</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">❓ How it works</div>
+            <div class="info-box">
+                <strong>On your computer:</strong> Install the userscript, then click "Send to Checker" on any Walmart order page.<br><br>
+                <strong>On your phone/tablet:</strong> Open the checklist link to check off items as you receive them.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const checklistList = document.getElementById('checklistList');
+
+        function renderChecklists(checklists) {
+            if (!checklistList) return;
+
+            if (!checklists || !checklists.length) {
+                checklistList.innerHTML = '<li class="checklist-empty">No checklists yet. Create one from a Walmart order page.</li>';
+                return;
+            }
+
+            checklistList.innerHTML = checklists.map((checklist) => {
+                const created = new Date(checklist.createdAt).toLocaleString();
+                const target = `/?checklist=${encodeURIComponent(checklist.id)}`;
+                return `
+                    <li class="checklist-item">
+                        <a href="${target}">${created}</a>
+                        <span class="checklist-meta">${checklist.itemCount} items · ${checklist.receivedCount}/${checklist.itemCount} received</span>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        async function loadChecklists() {
+            try {
+                const response = await fetch('/api/checklist/list');
+                const result = await response.json();
+                const list = result && Array.isArray(result.checklists) ? result.checklists : [];
+                renderChecklists(list);
+            } catch (error) {
+                console.error('Unable to load checklists', error);
+            }
+        }
+
+        function openChecklist() {
+            const input = document.getElementById('checklistInput').value.trim();
+            if (!input) {
+                alert('Please paste a checklist ID or URL');
+                return;
+            }
+
+            // If it's a full URL, extract the ID
+            let id = input;
+            if (input.includes('?checklist=')) {
+                id = input.split('?checklist=')[1];
+            }
+
+            // Navigate to checklist
+            window.location.href = `/?checklist=${id}`;
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('checklistInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') openChecklist();
+        });
+
+        loadChecklists();
+        setInterval(loadChecklists, 2000);
+
+        const stream = new EventSource('/api/checklists/stream');
+        stream.addEventListener('message', (event) => {
+            try {
+                const payload = JSON.parse(event.data);
+                if (payload && Array.isArray(payload.checklists)) {
+                    renderChecklists(payload.checklists);
+                }
+            } catch (error) {
+                console.error('Unable to parse checklist stream message', error);
+            }
+        });
+
+        // Check server status on load
+        fetch('/api/checklist/test', { method: 'GET' })
+            .then(() => console.log('Server is running'))
+            .catch(() => console.log('Server check complete'));
+    </script>
+</body>
+</html>

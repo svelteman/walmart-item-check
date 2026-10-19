@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "uuid": "^14.0.3",
+    "ws": "^8.22.0"
+  },
+  "name": "walmart-item-check",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.57.2",
+    "vite": "^8.3.4"
+  },
+  "scripts": {
+    "dev": "npm run build:svelte && node server.js",
+    "build:svelte": "vite build --config vite.config.js",
+    "watch:svelte": "vite --config vite.config.js",
+    "start": "npm run build:svelte && node bin/manager.js start",
+    "stop": "node bin/manager.js stop",
+    "restart": "npm run build:svelte && node bin/manager.js restart",
+    "status": "node bin/manager.js status",
+    "logs": "tail -f .server.log"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
