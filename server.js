@@ -8,7 +8,7 @@ const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 7429;
 const CHECKLISTS_FILE = path.join(__dirname, 'data', 'checklists.json');
 
 // Create HTTP server for WebSocket
@@ -78,13 +78,54 @@ function broadcastChecklistUpdate() {
 function normalizeItem(item) {
   const name = String(item?.name || '').trim();
   const quantity = Number(item?.quantity || 1);
+  const productUrl = String(item?.productUrl || '').trim();
+  const imageUrl = String(item?.imageUrl || '').trim();
+  const notes = String(item?.notes || '').trim();
+  const pricePaid = Number(String(item?.pricePaid || '').replace(/[^\d.-]/g, ''));
+  const currentPrice = Number(String(item?.currentPrice || '').replace(/[^\d.-]/g, ''));
   return {
     id: uuidv4(),
     name,
     quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+    productUrl: /^https?:\/\//i.test(productUrl) ? productUrl : '',
+    imageUrl: /^https?:\/\//i.test(imageUrl) ? imageUrl : '',
+    notes,
+    pricePaid: Number.isFinite(pricePaid) ? Number(pricePaid.toFixed(2)) : null,
+    currentPrice: Number.isFinite(currentPrice) ? Number(currentPrice.toFixed(2)) : null,
     received: false,
     timestamp: new Date().toISOString()
   };
+}
+
+function makeItemKey(item) {
+  return `${String(item?.name || '').trim().toLowerCase()}|${Number(item?.quantity || 1)}`;
+}
+
+function mergeChecklistItems(existingItems, incomingItems) {
+  const buckets = new Map();
+  for (const item of Array.isArray(existingItems) ? existingItems : []) {
+    const key = makeItemKey(item);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(item);
+  }
+
+  return (Array.isArray(incomingItems) ? incomingItems : []).map((incoming) => {
+    const key = makeItemKey(incoming);
+    const prior = buckets.get(key)?.shift();
+    if (!prior) return incoming;
+
+    return {
+      ...incoming,
+      id: prior.id || incoming.id,
+      received: !!prior.received,
+      timestamp: prior.timestamp || incoming.timestamp,
+      productUrl: incoming.productUrl || prior.productUrl || '',
+      imageUrl: incoming.imageUrl || prior.imageUrl || '',
+      notes: incoming.notes || prior.notes || '',
+      pricePaid: incoming.pricePaid != null ? incoming.pricePaid : (prior.pricePaid ?? null),
+      currentPrice: incoming.currentPrice != null ? incoming.currentPrice : (prior.currentPrice ?? null)
+    };
+  });
 }
 
 function makeChecklistSignature(orderUrl, items) {
@@ -163,10 +204,16 @@ app.post('/api/checklist/create', (req, res) => {
   });
 
   if (existingChecklist) {
+    existingChecklist.items = mergeChecklistItems(existingChecklist.items, normalizedItems);
+    existingChecklist.orderUrl = orderUrl;
+    existingChecklist.completed = existingChecklist.items.length > 0 && existingChecklist.items.every(item => item.received);
+    persistChecklists(checklists);
+    broadcastChecklistUpdate();
     return res.json({
       success: true,
       checklistId: existingChecklist.id,
       duplicate: true,
+      refreshed: true,
       url: `http://${req.hostname}:${PORT}/?checklist=${existingChecklist.id}`
     });
   }
@@ -196,6 +243,18 @@ app.get('/api/checklist/list', (req, res) => {
     success: true,
     checklists: getChecklistSummaries()
   });
+});
+
+app.delete('/api/checklist/:id', (req, res) => {
+  const checklist = checklists.get(req.params.id);
+  if (!checklist) {
+    return res.status(404).json({ error: 'Checklist not found' });
+  }
+
+  checklists.delete(req.params.id);
+  persistChecklists(checklists);
+  broadcastChecklistUpdate();
+  res.json({ success: true, deleted: true });
 });
 
 app.get('/api/checklists/stream', (req, res) => {
@@ -370,4 +429,3 @@ server.listen(PORT, '::', () => {
   console.log(`\n📋 Server info: http://localhost:${PORT}/info`);
   console.log(`\n💾 Userscript: http://localhost:${PORT}/userscript.js\n`);
 });
-

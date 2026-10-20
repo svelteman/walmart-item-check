@@ -206,6 +206,13 @@
             padding: 10px 12px;
         }
 
+        .checklist-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
         .checklist-item a {
             color: #0071ce;
             font-weight: 600;
@@ -217,6 +224,17 @@
             margin-top: 6px;
             color: #666;
             font-size: 12px;
+        }
+
+        .delete-checklist {
+            border: 1px solid #d9534f;
+            background: #fff;
+            color: #d9534f;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         .checklist-empty {
@@ -263,6 +281,9 @@
             <div class="info-box">
                 You'll get a checklist link when you use the userscript on a Walmart order page.
             </div>
+            <a id="walmartOrdersLink" href="https://www.walmart.com/orders" class="link-button" target="_blank" rel="noopener">
+                Open Walmart Orders
+            </a>
         </div>
 
         <div class="section">
@@ -329,11 +350,33 @@
                 const target = `/?checklist=${encodeURIComponent(checklist.id)}`;
                 return `
                     <li class="checklist-item">
-                        <a href="${target}">${created}</a>
-                        <span class="checklist-meta">${checklist.itemCount} items · ${checklist.receivedCount}/${checklist.itemCount} received</span>
+                        <div class="checklist-row">
+                            <div>
+                                <a href="${target}">${created}</a>
+                                <span class="checklist-meta">${checklist.itemCount} items · ${checklist.receivedCount}/${checklist.itemCount} received</span>
+                            </div>
+                            <button class="delete-checklist" type="button" data-id="${checklist.id}" aria-label="Delete checklist">Delete</button>
+                        </div>
                     </li>
                 `;
             }).join('');
+
+            checklistList.querySelectorAll('.delete-checklist').forEach((button) => {
+                button.addEventListener('click', async (event) => {
+                    const id = event.currentTarget.dataset.id;
+                    const confirmed = window.confirm('Delete this checklist? This cannot be undone.');
+                    if (!confirmed) return;
+
+                    try {
+                        const response = await fetch(`/api/checklist/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Unable to delete checklist');
+                        await loadChecklists();
+                    } catch (error) {
+                        console.error('Delete failed', error);
+                        alert('Could not delete the checklist.');
+                    }
+                });
+            });
         }
 
         async function loadChecklists() {
@@ -369,6 +412,19 @@
             if (e.key === 'Enter') openChecklist();
         });
 
+        function configureWalmartOrdersLink() {
+            const link = document.getElementById('walmartOrdersLink');
+            if (!link) return;
+            try {
+                const url = new URL(link.href);
+                url.searchParams.set('wic_server', window.location.origin);
+                link.href = url.toString();
+            } catch (error) {
+                console.error('Unable to configure Walmart link', error);
+            }
+        }
+
+        configureWalmartOrdersLink();
         loadChecklists();
         setInterval(loadChecklists, 2000);
 

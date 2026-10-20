@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { execSync } = require('child_process');
 
 const PID_FILE = path.join(__dirname, '..', '.server.pid');
 const LOG_FILE = path.join(__dirname, '..', '.server.log');
@@ -34,6 +35,58 @@ function isProcessRunning(pid) {
   }
 }
 
+function getServerPort() {
+  const port = Number(process.env.PORT) || 7429;
+  return Number.isFinite(port) && port > 0 ? port : 7429;
+}
+
+function getListeningPidsByPort(port) {
+  try {
+    if (process.platform === 'win32') {
+      const output = execSync(`netstat -ano -p tcp | findstr :${port}`, { encoding: 'utf8' });
+      return [...new Set(
+        output
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line && /\bLISTENING\b/i.test(line))
+          .map(line => line.split(/\s+/).pop())
+          .map(value => Number(value))
+          .filter(Number.isInteger)
+      )];
+    }
+
+    const output = execSync(`lsof -nP -iTCP:${port} -sTCP:LISTEN -t`, { encoding: 'utf8' });
+    return [...new Set(
+      output
+        .split('\n')
+        .map(value => Number(value.trim()))
+        .filter(Number.isInteger)
+    )];
+  } catch {
+    return [];
+  }
+}
+
+function stopByPort(port, skipPids = new Set()) {
+  const listeningPids = getListeningPidsByPort(port)
+    .filter(pid => !skipPids.has(pid))
+    .filter(pid => pid !== process.pid);
+
+  let stoppedCount = 0;
+  const errors = [];
+  for (const pid of listeningPids) {
+    try {
+      process.kill(pid);
+      stoppedCount += 1;
+      console.log(`Stopped process on port ${port} (PID: ${pid})`);
+    } catch (err) {
+      errors.push(`Unable to stop PID ${pid} on port ${port}: ${err.message}`);
+    }
+  }
+
+  return { stoppedCount, errors };
+}
+
 const command = process.argv[2];
 
 if (command === 'start') {
@@ -54,20 +107,40 @@ if (command === 'start') {
   savePid(server.pid);
   console.log(`Server started (PID: ${server.pid})`);
   server.unref();
-} else if (command === 'stop') {
+} else if (command === 'stop' || command === 'stop-dev') {
   const pid = getPid();
-  if (!pid) {
-    console.log('Server is not running');
-    process.exit(0);
+  const skipPids = new Set();
+  let stoppedAny = false;
+  let hadErrors = false;
+
+  if (command === 'stop' && pid) {
+    try {
+      process.kill(pid);
+      skipPids.add(pid);
+      removePid();
+      stoppedAny = true;
+      console.log(`Server stopped (was PID: ${pid})`);
+    } catch (err) {
+      hadErrors = true;
+      console.error(`Error stopping server: ${err.message}`);
+      removePid();
+    }
+  } else if (command === 'stop') {
+    removePid();
   }
 
-  try {
-    process.kill(pid);
-    removePid();
-    console.log(`Server stopped (was PID: ${pid})`);
-  } catch (err) {
-    console.error(`Error stopping server: ${err.message}`);
-    removePid();
+  const { stoppedCount, errors } = stopByPort(getServerPort(), skipPids);
+  if (stoppedCount > 0) stoppedAny = true;
+  if (errors.length) {
+    hadErrors = true;
+    for (const message of errors) console.error(message);
+  }
+
+  if (!stoppedAny) {
+    console.log('Server is not running');
+  }
+
+  if (hadErrors) {
     process.exit(1);
   }
 } else if (command === 'status') {
@@ -105,7 +178,6 @@ if (command === 'start') {
   server.unref();
 } else {
   console.log('Usage: npm run [command]');
-  console.log('Commands: start, stop, status, restart');
+  console.log('Commands: start, stop, stop-dev, status, restart');
   process.exit(1);
 }
-

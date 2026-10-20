@@ -20,6 +20,8 @@
     "watch:svelte": "vite --config vite.config.js",
     "start": "npm run build:svelte && node bin/manager.js start",
     "stop": "node bin/manager.js stop",
+    "stop:dev": "node bin/manager.js stop-dev",
+    "restart:dev": "npm run stop:dev && npm run dev",
     "restart": "npm run build:svelte && node bin/manager.js restart",
     "status": "node bin/manager.js status",
     "logs": "tail -f .server.log"
