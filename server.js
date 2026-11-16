@@ -419,7 +419,7 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-server.listen(PORT, '::', () => {
+server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIPs();
   console.log('\n🚀 Walmart Item Check Server Started');
   console.log(`\n📱 Access from your device:`);

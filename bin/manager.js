@@ -105,7 +105,7 @@ if (command === 'start') {
   });
 
   savePid(server.pid);
-  console.log(`Server started (PID: ${server.pid})`);
+  console.log(`Server started (PID: ${server.pid}), listening on 0.0.0.0:${getServerPort()}`);
   server.unref();
 } else if (command === 'stop' || command === 'stop-dev') {
   const pid = getPid();
@@ -113,7 +113,7 @@ if (command === 'start') {
   let stoppedAny = false;
   let hadErrors = false;
 
-  if (command === 'stop' && pid) {
+  if ((command === 'stop' || command === 'stop-dev') && pid) {
     try {
       process.kill(pid);
       skipPids.add(pid);
@@ -125,7 +125,7 @@ if (command === 'start') {
       console.error(`Error stopping server: ${err.message}`);
       removePid();
     }
-  } else if (command === 'stop') {
+  } else if (command === 'stop' || command === 'stop-dev') {
     removePid();
   }
 
@@ -174,7 +174,7 @@ if (command === 'start') {
   });
 
   savePid(server.pid);
-  console.log(`Server restarted (PID: ${server.pid})`);
+  console.log(`Server restarted (PID: ${server.pid}), listening on 0.0.0.0:${getServerPort()}`);
   server.unref();
 } else {
   console.log('Usage: npm run [command]');
